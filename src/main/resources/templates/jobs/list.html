@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+<head>
+    <title>Job List</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <h2>Scheduled Jobs</h2>
+
+        <!-- Success Message -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+
+        <div class="mb-3">
+            <a th:href="@{/jobs/new}" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Schedule New Job</a>
+        </div>
+
+        <div th:if="${jobs == null or jobs.isEmpty()}" class="alert alert-info">
+            No jobs scheduled yet.
+        </div>
+
+        <table th:if="${jobs != null and not jobs.isEmpty()}" class="table table-striped table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Group</th>
+                <th>Class</th>
+                <th>Cron Expression</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Next Fire Time</th>
+                <th>Previous Fire Time</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="job : ${jobs}">
+                <td th:text="${job.jobName}"></td>
+                <td th:text="${job.jobGroup}"></td>
+                <td th:text="${job.jobClass}" style="word-break: break-all;"></td>
+                <td th:text="${job.cronExpression}"></td>
+                <td th:text="${job.description}"></td>
+                <td>
+                    <span th:switch="${job.triggerState}" class="badge"
+                          th:classappend="${job.triggerState == 'NORMAL' ? 'bg-success' : (job.triggerState == 'PAUSED' ? 'bg-warning text-dark' : (job.triggerState == 'ERROR' ? 'bg-danger' : (job.triggerState == 'COMPLETE' ? 'bg-info text-dark' : (job.triggerState == 'BLOCKED' ? 'bg-secondary' : 'bg-light text-dark'))))}">
+                        <span th:case="'NORMAL'">NORMAL</span>
+                        <span th:case="'PAUSED'">PAUSED</span>
+                        <span th:case="'ERROR'">ERROR</span>
+                        <span th:case="'COMPLETE'">COMPLETE</span>
+                        <span th:case="'BLOCKED'">BLOCKED</span>
+                        <span th:case="*">[[${job.triggerState}]]</span>
+                    </span>
+                </td>
+                <td th:text="${job.nextFireTime != null ? #temporals.format(job.nextFireTime, 'yyyy-MM-dd HH:mm:ss') : 'N/A'}"></td>
+                <td th:text="${job.previousFireTime != null ? #temporals.format(job.previousFireTime, 'yyyy-MM-dd HH:mm:ss') : 'N/A'}"></td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <form th:action="@{/jobs/pause}" method="post" class="d-inline me-1" th:if="${job.triggerState == 'NORMAL' or job.triggerState == 'BLOCKED'}">
+                            <input type="hidden" name="jobName" th:value="${job.jobName}" />
+                            <input type="hidden" name="jobGroup" th:value="${job.jobGroup}" />
+                            <button type="submit" class="btn btn-sm btn-warning" title="Pause"><i class="fas fa-pause"></i></button>
+                        </form>
+                        <form th:action="@{/jobs/resume}" method="post" class="d-inline me-1" th:if="${job.triggerState == 'PAUSED'}">
+                            <input type="hidden" name="jobName" th:value="${job.jobName}" />
+                            <input type="hidden" name="jobGroup" th:value="${job.jobGroup}" />
+                            <button type="submit" class="btn btn-sm btn-success" title="Resume"><i class="fas fa-play"></i></button>
+                        </form>
+                        <form th:action="@{/jobs/delete}" method="post" class="d-inline">
+                            <input type="hidden" name="jobName" th:value="${job.jobName}" />
+                            <input type="hidden" name="jobGroup" th:value="${job.jobGroup}" />
+                            <button type="submit" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this job?');"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <!-- Add any page-specific JavaScript here if needed -->
+</th:block>
+</body>
+</html>

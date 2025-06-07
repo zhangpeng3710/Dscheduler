@@ -1,0 +1,112 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+spring:
+  application:
+    name: Dscheduler
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    prefix: classpath:/templates/
+    suffix: .html
+  security:
+    user:
+      name: demo
+      password: demo
+      roles: USER
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://8.141.103.170:3106/tomin?useUnicode=true&characterEncoding=utf-8
+    username: tomin
+    password: F-p6AE!om
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      auto-commit: true
+  quartz:
+    # 任务存储类型，jdbc表示使用数据库存储
+    job-store-type: jdbc
+    # Quartz 是否自动启动
+    auto-startup: true
+    # 延迟 N 秒启动，给应用留出启动时间
+    startup-delay: 10
+    # 应用关闭时，是否等待定时任务执行完成。默认为 false，建议设置为 true 确保任务不丢失
+    wait-for-jobs-to-complete-on-shutdown: true
+    # 是否覆盖已有 Job 的配置，生产环境建议设置为 false 防止误覆盖
+    overwrite-existing-jobs: false
+    jdbc:
+      # 数据库初始化策略：
+      # - always: 总是初始化数据库表结构
+      # - never: 不自动初始化（生产环境推荐）
+      # 注意：生产环境建议手动建表，再导入数据的形式
+      # initialize-schema: always
+      initialize-schema: never
+    properties:
+      org:
+        quartz:
+          scheduler:
+            # 调度器实例名称，使用应用名称
+            instanceName: ${spring.application.name:quartz-scheduler}
+            # 实例ID自动生成
+            instanceId: AUTO
+            # 调度器线程名称前缀
+            threadName: ${spring.application.name:quartz-scheduler}-worker
+            # 调度器ID生成器
+            instanceIdGenerator.class: org.quartz.simpl.SimpleInstanceIdGenerator
+
+          # 任务存储配置
+          jobStore:
+            # 是否使用属性文件存储JobDataMap，false时使用BLOB, true时以键值对存储
+            useProperties: false
+            # 是否集群模式
+            isClustered: true
+            # 集群状态更新间隔(毫秒)
+            clusterCheckinInterval: 15000
+            # 触发器超时阈值(毫秒)
+            misfireThreshold: 120000
+            # 数据库表前缀
+            tablePrefix: QRTZ_
+
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            dataSource: myDS
+          dataSource:
+            myDS:
+              provider: hikaricp
+              driver: com.mysql.cj.jdbc.Driver
+              URL: ${spring.datasource.url}
+              username: ${spring.datasource.username}
+              password: ${spring.datasource.password}
+          # 线程池配置
+          threadPool:
+            # 使用简单线程池
+            class: org.quartz.simpl.SimpleThreadPool
+            # 线程数量，根据任务并发量调整
+            threadCount: 20
+
+          # 插件配置
+          plugin:
+            # 作业历史日志插件
+            jobHistory:
+              class: org.quartz.plugins.history.LoggingJobHistoryPlugin
+              # 作业执行成功日志
+              jobSuccessMessage: "作业[{1}.{0}]执行完成，执行结果: {8}"
+              # 作业执行失败日志
+              jobFailedMessage: "作业[{1}.{0}]执行失败，异常信息: {8}"
+              # 作业即将触发日志
+              jobToBeFiredMessage: "作业[{1}.{0}]即将由触发器{4}.{3}触发，是否重新触发: {7}"
+              # 作业被否决日志
+              jobWasVetoedMessage: "作业[{1}.{0}]被否决，将不会执行"
+
+            # 触发器历史日志插件
+            triggerHistory:
+              class: org.quartz.plugins.history.LoggingTriggerHistoryPlugin
+              # 触发器触发日志
+              triggerFiredMessage: "触发器 {1}.{0} 触发了作业 {6}.{5}，触发时间: {4, date, yyyy-MM-dd HH:mm:ss}"
+              # 触发器完成日志
+              triggerCompleteMessage: "触发器 {1}.{0} 完成了对作业 {6}.{5} 的触发，完成时间: {4, date, yyyy-MM-dd HH:mm:ss}，触发结果代码: {9}"

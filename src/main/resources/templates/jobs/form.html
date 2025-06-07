@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+<head>
+    <title>Schedule New Job</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <h2>Schedule New Job</h2>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <form th:action="@{/jobs/save}" th:object="${jobDTO}" method="post">
+            <div class="mb-3">
+                <label for="jobName" class="form-label">Job Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="jobName" th:field="*{jobName}" required="required" />
+                <div th:if="${#fields.hasErrors('jobName')}" th:errors="*{jobName}" class="text-danger"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="jobGroup" class="form-label">Job Group <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="jobGroup" th:field="*{jobGroup}" required="required" />
+                <div th:if="${#fields.hasErrors('jobGroup')}" th:errors="*{jobGroup}" class="text-danger"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="jobClass" class="form-label">Job Class (Fully Qualified Name) <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="jobClass" th:field="*{jobClass}" placeholder="e.g., com.roc.dscheduler.job.SampleJob" required="required" />
+                <div th:if="${#fields.hasErrors('jobClass')}" th:errors="*{jobClass}" class="text-danger"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="cronExpression" class="form-label">Cron Expression <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="cronExpression" th:field="*{cronExpression}" placeholder="e.g., 0 0/5 * * * ?" required="required" />
+                <small class="form-text text-muted">Example: '0 0/5 * * * ?' (every 5 minutes). See <a href="http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html" target="_blank">Cron Trigger Tutorial</a>.</small>
+                <div th:if="${#fields.hasErrors('cronExpression')}" th:errors="*{cronExpression}" class="text-danger"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" th:field="*{description}" rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Schedule Job</button>
+            <a th:href="@{/jobs}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+        </form>
+    </div>
+</div>
+</body>
+</html>
