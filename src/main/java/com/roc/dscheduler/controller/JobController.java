@@ -1,6 +1,7 @@
 package com.roc.dscheduler.controller;
 
 import com.roc.dscheduler.dto.JobDTO;
+import com.roc.dscheduler.dto.Page;
 import com.roc.dscheduler.service.JobService;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -29,35 +30,32 @@ public class JobController {
 
     @GetMapping
     public String listJobs(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "jobName") String sort,
             @RequestParam(defaultValue = "asc") String order,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String searchType, // name, group, cron, status
+            @RequestParam(required = false) String searchType,
             Model model) {
         try {
-            // Get all jobs
-            List<JobDTO> jobs = jobService.getAllJobs();
+            // Get all jobs first (for filtering)
+            List<JobDTO> allJobs = jobService.getAllJobs();
 
             // Apply search filter if search term is provided
             if (search != null && !search.trim().isEmpty() && searchType != null) {
                 String searchTerm = search.toLowerCase().trim();
-                jobs = jobs.stream().filter(job -> {
+                allJobs = allJobs.stream().filter(job -> {
                     switch (searchType) {
-                        case "name":
-                            return job.getJobName().toLowerCase().contains(searchTerm);
-                        case "group":
-                            return job.getJobGroup().toLowerCase().contains(searchTerm);
-                        case "cron":
-                            return job.getCronExpression().toLowerCase().contains(searchTerm);
-                        case "status":
-                            return job.getTriggerState().toLowerCase().contains(searchTerm);
-                        default:
-                            return true;
+                        case "name": return job.getJobName().toLowerCase().contains(searchTerm);
+                        case "group": return job.getJobGroup().toLowerCase().contains(searchTerm);
+                        case "cron": return job.getCronExpression().toLowerCase().contains(searchTerm);
+                        case "status": return job.getTriggerState().toLowerCase().contains(searchTerm);
+                        default: return true;
                     }
                 }).collect(Collectors.toList());
             }
 
-            // Sort the jobs based on sort and order parameters
+            // Sort the jobs
             Comparator<JobDTO> comparator;
             switch (sort) {
                 case "jobGroup":
@@ -68,20 +66,42 @@ public class JobController {
                     break;
                 default:
                     comparator = Comparator.comparing(JobDTO::getJobName);
-                    sort = "jobName";
+                    break;
             }
 
             if ("desc".equalsIgnoreCase(order)) {
                 comparator = comparator.reversed();
             }
 
-            jobs.sort(comparator);
+            allJobs.sort(comparator);
 
-            model.addAttribute("jobs", jobs);
+            // Apply pagination
+            int totalItems = allJobs.size();
+            int totalPages = (int) Math.ceil((double) totalItems / size);
+            page = Math.max(1, Math.min(page, totalPages));
+
+            int fromIndex = (page - 1) * size;
+            int toIndex = Math.min(fromIndex + size, totalItems);
+            List<JobDTO> pageJobs = allJobs.subList(fromIndex, toIndex);
+
+            // Create page object
+            Page<JobDTO> jobPage = new Page<>();
+            jobPage.setContent(pageJobs);
+            jobPage.setCurrentPage(page);
+            jobPage.setPageSize(size);
+            jobPage.setTotalItems(totalItems);
+            jobPage.setTotalPages(totalPages == 0 ? 1 : totalPages);
+
+            model.addAttribute("page", jobPage);
             model.addAttribute("sortField", sort);
             model.addAttribute("sortOrder", order);
             model.addAttribute("search", search);
             model.addAttribute("searchType", searchType != null ? searchType : "name");
+            List<Integer> attributeValue = new java.util.ArrayList<>();
+            attributeValue.add(10);
+            attributeValue.add(20);
+            attributeValue.add(50);
+            model.addAttribute("pageSizes", attributeValue);
 
         } catch (SchedulerException e) {
             log.error("Error fetching job list: {}", e.getMessage(), e);
