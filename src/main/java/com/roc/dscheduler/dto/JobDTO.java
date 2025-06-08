@@ -1,14 +1,9 @@
 package com.roc.dscheduler.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-@NoArgsConstructor
-@AllArgsConstructor
 public class JobDTO {
 
 

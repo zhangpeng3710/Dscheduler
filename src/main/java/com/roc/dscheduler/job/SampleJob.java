@@ -13,23 +13,16 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * A sample job that logs its execution time.
- * Implements {@link Job} for Quartz execution.
- * {@link DisallowConcurrentExecution} prevents multiple instances of this job
- * from running concurrently if the previous run hasn't finished.
- * {@link Component} allows Spring to manage this bean if needed, though Quartz
- * will instantiate it via the JobFactory. If you need to inject Spring beans
- * into this job, ensure AutowiringSpringBeanJobFactory is correctly configured.
+ * you can copy  this class and use it as a template for your own jobs.
  */
-@Component // Optional: if you want Spring to be aware of it for other purposes, or if it has Spring dependencies.
+
+@Component
 @DisallowConcurrentExecution // Prevents concurrent execution of the same job definition
 public class SampleJob implements Job {
 
     private static final Logger log = LoggerFactory.getLogger(SampleJob.class);
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    // Example of a field that could be injected by Spring if AutowiringSpringBeanJobFactory is used
-    // @Autowired
-    // private MyService myService;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
