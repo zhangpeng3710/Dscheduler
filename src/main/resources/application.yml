@@ -3,6 +3,8 @@ server:
   servlet:
     context-path: /
 spring:
+  main:
+    web-application-type: SERVLET
   application:
     name: Dscheduler
   thymeleaf:

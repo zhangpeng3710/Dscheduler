@@ -93,3 +93,17 @@ public class MyCustomJob implements Job {
     }
 }
 ```
+
+## 生产环境
+
+可根据安全规范，支持关闭页面访问
+在生产环境中，建议关闭页面访问，以防止用户直接访问系统。您可以在 `application.properties` 文件中添加以下配置来禁用页面访问：
+```yml
+spring:
+    main:
+        web-application-type: none
+```
+或在运行项目时，您可以使用以下命令启动应用程序：
+```bash
+java -jar your-app.jar -Dspring.main.web-application-type=none
+```
