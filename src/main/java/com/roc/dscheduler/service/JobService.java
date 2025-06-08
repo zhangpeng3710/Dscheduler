@@ -6,7 +6,6 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,19 +19,21 @@ import java.util.Set;
 public class JobService {
 
     private static final Logger log = LoggerFactory.getLogger(JobService.class);
+    private final Scheduler scheduler;
 
     @Autowired
-    private SchedulerFactoryBean schedulerFactoryBean;
+    public JobService(Scheduler scheduler) throws SchedulerException {
+        this.scheduler = scheduler;
+    }
 
     /**
      * Schedules a new job.
      *
-     * @param jobInfo DTO containing job details.
-     * @throws SchedulerException if scheduling fails.
+     * @param jobInfo containing job details.
+     * @throws SchedulerException     if scheduling fails.
      * @throws ClassNotFoundException if the job class is not found.
      */
     public void scheduleJob(JobInfo jobInfo) throws SchedulerException, ClassNotFoundException {
-        Scheduler scheduler = schedulerFactoryBean.getScheduler();
         JobKey jobKey = JobKey.jobKey(jobInfo.getJobName(), jobInfo.getJobGroup());
 
         if (scheduler.checkExists(jobKey)) {
@@ -70,7 +71,6 @@ public class JobService {
      * @throws SchedulerException if pausing fails.
      */
     public void pauseJob(String jobName, String jobGroup) throws SchedulerException {
-        Scheduler scheduler = schedulerFactoryBean.getScheduler();
         scheduler.pauseJob(JobKey.jobKey(jobName, jobGroup));
         log.info("Paused job: {} in group: {}", jobName, jobGroup);
     }
@@ -83,7 +83,6 @@ public class JobService {
      * @throws SchedulerException if resuming fails.
      */
     public void resumeJob(String jobName, String jobGroup) throws SchedulerException {
-        Scheduler scheduler = schedulerFactoryBean.getScheduler();
         scheduler.resumeJob(JobKey.jobKey(jobName, jobGroup));
         log.info("Resumed job: {} in group: {}", jobName, jobGroup);
     }
@@ -96,7 +95,6 @@ public class JobService {
      * @throws SchedulerException if deletion fails.
      */
     public void deleteJob(String jobName, String jobGroup) throws SchedulerException {
-        Scheduler scheduler = schedulerFactoryBean.getScheduler();
         scheduler.deleteJob(JobKey.jobKey(jobName, jobGroup));
         log.info("Deleted job: {} in group: {}", jobName, jobGroup);
     }
@@ -108,7 +106,6 @@ public class JobService {
      * @throws SchedulerException if retrieval fails.
      */
     public List<JobInfo> getAllJobs() throws SchedulerException {
-        Scheduler scheduler = schedulerFactoryBean.getScheduler();
         List<JobInfo> jobInfos = new ArrayList<>();
         Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.anyJobGroup());
 

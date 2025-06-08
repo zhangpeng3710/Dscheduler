@@ -93,22 +93,9 @@ spring:
 
           # 插件配置
           plugin:
-            # 作业历史日志插件
+            # 作业历史日志插件，用于记录作业和触发器执行日志, 对于性能敏感场景，请不要启用此插件
             jobHistory:
               class: org.quartz.plugins.history.LoggingJobHistoryPlugin
-              # 作业执行成功日志
-              jobSuccessMessage: "作业[{1}.{0}]执行完成，执行结果: {8}"
-              # 作业执行失败日志
-              jobFailedMessage: "作业[{1}.{0}]执行失败，异常信息: {8}"
-              # 作业即将触发日志
-              jobToBeFiredMessage: "作业[{1}.{0}]即将由触发器{4}.{3}触发，是否重新触发: {7}"
-              # 作业被否决日志
-              jobWasVetoedMessage: "作业[{1}.{0}]被否决，将不会执行"
-
-            # 触发器历史日志插件
+            # 触发器历史日志插件，用于记录作业和触发器执行日志, 对于性能敏感场景，请不要启用此插件
             triggerHistory:
               class: org.quartz.plugins.history.LoggingTriggerHistoryPlugin
-              # 触发器触发日志
-              triggerFiredMessage: "触发器 {1}.{0} 触发了作业 {6}.{5}，触发时间: {4, date, yyyy-MM-dd HH:mm:ss}"
-              # 触发器完成日志
-              triggerCompleteMessage: "触发器 {1}.{0} 完成了对作业 {6}.{5} 的触发，完成时间: {4, date, yyyy-MM-dd HH:mm:ss}，触发结果代码: {9}"

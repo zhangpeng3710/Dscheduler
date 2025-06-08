@@ -23,7 +23,6 @@ public class SampleJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(SampleJob.class);
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         String jobName = context.getJobDetail().getKey().getName();

@@ -24,8 +24,12 @@ public class JobController {
 
     private static final Logger log = LoggerFactory.getLogger(JobController.class);
 
+    private final JobService jobService;
+
     @Autowired
-    private JobService jobService;
+    public JobController(JobService jobService) {
+        this.jobService = jobService;
+    }
 
 
     @GetMapping
@@ -46,11 +50,16 @@ public class JobController {
                 String searchTerm = search.toLowerCase().trim();
                 allJobs = allJobs.stream().filter(job -> {
                     switch (searchType) {
-                        case "name": return job.getJobName().toLowerCase().contains(searchTerm);
-                        case "group": return job.getJobGroup().toLowerCase().contains(searchTerm);
-                        case "cron": return job.getCronExpression().toLowerCase().contains(searchTerm);
-                        case "status": return job.getTriggerState().toLowerCase().contains(searchTerm);
-                        default: return true;
+                        case "name":
+                            return job.getJobName().toLowerCase().contains(searchTerm);
+                        case "group":
+                            return job.getJobGroup().toLowerCase().contains(searchTerm);
+                        case "cron":
+                            return job.getCronExpression().toLowerCase().contains(searchTerm);
+                        case "status":
+                            return job.getTriggerState().toLowerCase().contains(searchTerm);
+                        default:
+                            return true;
                     }
                 }).collect(Collectors.toList());
             }
