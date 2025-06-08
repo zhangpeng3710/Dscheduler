@@ -24,8 +24,8 @@ spring:
     username: tomin
     password: F-p6AE!om
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: 100
+      minimum-idle: 10
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
@@ -89,7 +89,7 @@ spring:
             # 使用简单线程池
             class: org.quartz.simpl.SimpleThreadPool
             # 线程数量，根据任务并发量调整
-            threadCount: 20
+            threadCount: 300
 
           # 插件配置
           plugin:

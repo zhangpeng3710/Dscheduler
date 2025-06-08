@@ -171,11 +171,13 @@
                         <!-- First Page -->
                         <li class="page-item" th:classappend="${page.currentPage == 1} ? 'disabled' : ''">
                             <a class="page-link" th:if="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=1, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=1, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:title="第一页">
                                 <i class="fas fa-angle-double-left"></i>
                             </a>
                             <a class="page-link" th:unless="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=1, sort=${sortField}, order=${sortOrder})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=1, sort=${sortField}, order=${sortOrder})}"
+                               th:title="第一页">
                                 <i class="fas fa-angle-double-left"></i>
                             </a>
                         </li>
@@ -183,46 +185,96 @@
                         <!-- Previous Page -->
                         <li class="page-item" th:classappend="${page.currentPage == 1} ? 'disabled' : ''">
                             <a class="page-link" th:if="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage - 1}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage - 1}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:title="上一页">
                                 <i class="fas fa-angle-left"></i>
                             </a>
                             <a class="page-link" th:unless="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage - 1}, sort=${sortField}, order=${sortOrder})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage - 1}, sort=${sortField}, order=${sortOrder})}"
+                               th:title="上一页">
                                 <i class="fas fa-angle-left"></i>
                             </a>
                         </li>
-
-                        <!-- Page Numbers -->
-                        <li class="page-item" th:each="i : ${#numbers.sequence(1, page.totalPages)}"
-                            th:classappend="${i == page.currentPage} ? 'active' : ''">
+                        
+                        <!-- Page Numbers with Ellipsis -->
+                        <!-- First Page -->
+                        <li class="page-item" th:classappend="${page.currentPage == 1} ? 'active' : ''">
                             <a class="page-link" th:if="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${i}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
-                               th:text="${i}">1</a>
+                               th:href="@{/jobs(size=${page.pageSize}, page=1, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:text="1"></a>
                             <a class="page-link" th:unless="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${i}, sort=${sortField}, order=${sortOrder})}"
-                               th:text="${i}">1</a>
+                               th:href="@{/jobs(size=${page.pageSize}, page=1, sort=${sortField}, order=${sortOrder})}"
+                               th:text="1"></a>
                         </li>
-
+                        
+                        <li class="page-item disabled" th:if="${page.currentPage > 4 and page.totalPages > 5}">
+                            <span class="page-link">...</span>
+                        </li>
+                        
+                        <!-- Page Before Current -->
+                        <li class="page-item" th:if="${page.currentPage > 2 and page.currentPage <= page.totalPages}">
+                            <a class="page-link" th:if="${search != null and search != ''}"
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage - 1}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:text="${page.currentPage - 1}"></a>
+                            <a class="page-link" th:unless="${search != null and search != ''}"
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage - 1}, sort=${sortField}, order=${sortOrder})}"
+                               th:text="${page.currentPage - 1}"></a>
+                        </li>
+                        
+                        <!-- Current Page -->
+                        <li class="page-item active" th:if="${page.currentPage > 1 and page.currentPage < page.totalPages}">
+                            <span class="page-link" th:text="${page.currentPage}"></span>
+                        </li>
+                        
+                        <!-- Page After Current -->
+                        <li class="page-item" th:if="${page.currentPage < page.totalPages - 1}">
+                            <a class="page-link" th:if="${search != null and search != ''}"
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage + 1}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:text="${page.currentPage + 1}"></a>
+                            <a class="page-link" th:unless="${search != null and search != ''}"
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage + 1}, sort=${sortField}, order=${sortOrder})}"
+                               th:text="${page.currentPage + 1}"></a>
+                        </li>
+                        
+                        <li class="page-item disabled" th:if="${page.currentPage < page.totalPages - 3 and page.totalPages > 5}">
+                            <span class="page-link">...</span>
+                        </li>
+                        
+                        <!-- Last Page (if different from first) -->
+                        <li class="page-item" th:if="${page.totalPages > 1}" 
+                            th:classappend="${page.currentPage == page.totalPages} ? 'active' : ''">
+                            <a class="page-link" th:if="${search != null and search != ''}"
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.totalPages}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:text="${page.totalPages}"></a>
+                            <a class="page-link" th:unless="${search != null and search != ''}"
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.totalPages}, sort=${sortField}, order=${sortOrder})}"
+                               th:text="${page.totalPages}"></a>
+                        </li>
+                        
                         <!-- Next Page -->
                         <li class="page-item" th:classappend="${page.currentPage == page.totalPages} ? 'disabled' : ''">
                             <a class="page-link" th:if="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage + 1}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage + 1}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:title="下一页">
                                 <i class="fas fa-angle-right"></i>
                             </a>
                             <a class="page-link" th:unless="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage + 1}, sort=${sortField}, order=${sortOrder})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.currentPage + 1}, sort=${sortField}, order=${sortOrder})}"
+                               th:title="下一页">
                                 <i class="fas fa-angle-right"></i>
                             </a>
                         </li>
-
+                        
                         <!-- Last Page -->
                         <li class="page-item" th:classappend="${page.currentPage == page.totalPages} ? 'disabled' : ''">
                             <a class="page-link" th:if="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${page.totalPages}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.totalPages}, sort=${sortField}, order=${sortOrder}, search=${search}, searchType=${searchType})}"
+                               th:title="最后一页">
                                 <i class="fas fa-angle-double-right"></i>
                             </a>
                             <a class="page-link" th:unless="${search != null and search != ''}"
-                               th:href="@{/jobs(size=${page.pageSize}, page=${page.totalPages}, sort=${sortField}, order=${sortOrder})}">
+                               th:href="@{/jobs(size=${page.pageSize}, page=${page.totalPages}, sort=${sortField}, order=${sortOrder})}"
+                               th:title="最后一页">
                                 <i class="fas fa-angle-double-right"></i>
                             </a>
                         </li>
@@ -358,13 +410,19 @@
         .pagination .page-item.active .page-link {
             background-color: #0d6efd;
             border-color: #0d6efd;
+            color: white;
         }
 
         .pagination .page-link {
-            color: #0d6efd;
+            color: #000000;
+        }
+        
+        .pagination .page-link i {
+            color: #000000;
         }
 
-        .pagination .page-item.disabled .page-link {
+        .pagination .page-item.disabled .page-link,
+        .pagination .page-item.disabled .page-link i {
             color: #6c757d;
             pointer-events: none;
             background-color: #fff;
