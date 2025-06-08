@@ -26,9 +26,37 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        <div class="mb-3">
-            <a th:href="@{/jobs/new}" class="btn btn-primary"><i class="fas fa-plus-circle"></i> 添加定时任务</a>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <a th:href="@{/jobs/new}" class="btn btn-primary"><i class="fas fa-plus-circle"></i> 添加定时任务</a>
+            </div>
+            <div class="search-container">
+                <form th:action="@{/jobs}" method="get" class="d-flex gap-2 justify-content-end w-100">
+                    <input type="hidden" name="sort" th:value="${sortField}">
+                    <input type="hidden" name="order" th:value="${sortOrder}">
+
+                    <div>
+                        <select name="searchType" class="form-select" id="searchType">
+                            <option value="name" th:selected="${searchType == 'name'}">任务名</option>
+                            <option value="group" th:selected="${searchType == 'group'}">分组</option>
+                            <option value="cron" th:selected="${searchType == 'cron'}">Cron表达式</option>
+                            <option value="status" th:selected="${searchType == 'status'}">状态</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="width: 300px;">
+                        <input type="text" name="search" class="form-control"
+                               th:value="${search}" placeholder="输入搜索内容...">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> 搜索
+                        </button>
+                        <a th:href="@{/jobs}" class="btn btn-outline-secondary" th:if="${search != null}">
+                            <i class="fas fa-times"></i> 清除
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
+
 
         <div th:if="${jobs == null or jobs.isEmpty()}" class="alert alert-info">
             No jobs scheduled yet.
@@ -111,6 +139,14 @@
 <th:block layout:fragment="scripts">
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
+            // Add this inside your existing DOMContentLoaded event listener
+            document.querySelector('form[method="get"]').addEventListener('submit', function(e) {
+                const searchInput = this.querySelector('input[name="search"]');
+                if (searchInput && searchInput.value.trim() === '') {
+                    e.preventDefault();
+                    window.location.href = this.action;
+                }
+            });
             // Add click handlers to sortable columns
             document.querySelectorAll('th.sortable').forEach(header => {
                 header.addEventListener('click', function() {
@@ -164,6 +200,44 @@
         .fa-sort-up,
         .fa-sort-down {
             display: none !important;
+        }
+        /* Search form styles */
+        .search-container {
+            flex: 1;
+            margin-left: 1rem;
+            max-width: calc(100% - 200px);
+        }
+        
+        .search-container form {
+            max-width: 100%;
+        }
+        
+        #searchType {
+            min-width: 120px;
+            width: auto;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .mb-3 {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .search-container {
+                width: 100%;
+                margin-left: 0;
+                max-width: 100%;
+            }
+            .mb-3 > div {
+                width: 100%;
+            }
+            .search-container form {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .search-container .input-group {
+                width: 100% !important;
+            }
         }
     </style>
 </th:block>

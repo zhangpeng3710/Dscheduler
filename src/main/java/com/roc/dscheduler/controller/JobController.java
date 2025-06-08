@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.validation.Valid;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/jobs")
@@ -25,14 +26,36 @@ public class JobController {
     @Autowired
     private JobService jobService;
 
+
     @GetMapping
     public String listJobs(
             @RequestParam(defaultValue = "jobName") String sort,
             @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String searchType, // name, group, cron, status
             Model model) {
         try {
             // Get all jobs
             List<JobDTO> jobs = jobService.getAllJobs();
+
+            // Apply search filter if search term is provided
+            if (search != null && !search.trim().isEmpty() && searchType != null) {
+                String searchTerm = search.toLowerCase().trim();
+                jobs = jobs.stream().filter(job -> {
+                    switch (searchType) {
+                        case "name":
+                            return job.getJobName().toLowerCase().contains(searchTerm);
+                        case "group":
+                            return job.getJobGroup().toLowerCase().contains(searchTerm);
+                        case "cron":
+                            return job.getCronExpression().toLowerCase().contains(searchTerm);
+                        case "status":
+                            return job.getTriggerState().toLowerCase().contains(searchTerm);
+                        default:
+                            return true;
+                    }
+                }).collect(Collectors.toList());
+            }
 
             // Sort the jobs based on sort and order parameters
             Comparator<JobDTO> comparator;
@@ -45,7 +68,7 @@ public class JobController {
                     break;
                 default:
                     comparator = Comparator.comparing(JobDTO::getJobName);
-                    sort = "jobName"; // Ensure sort is set to a valid value
+                    sort = "jobName";
             }
 
             if ("desc".equalsIgnoreCase(order)) {
@@ -57,7 +80,9 @@ public class JobController {
             model.addAttribute("jobs", jobs);
             model.addAttribute("sortField", sort);
             model.addAttribute("sortOrder", order);
-            
+            model.addAttribute("search", search);
+            model.addAttribute("searchType", searchType != null ? searchType : "name");
+
         } catch (SchedulerException e) {
             log.error("Error fetching job list: {}", e.getMessage(), e);
             model.addAttribute("error", "Could not retrieve job list: " + e.getMessage());
