@@ -1,10 +1,10 @@
-package com.roc.dscheduler.dto;
+package com.roc.dscheduler.entity;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-public class JobDTO {
+public class JobInfo {
 
 
     @NotBlank(message = "Job name cannot be blank")
@@ -95,12 +95,12 @@ public class JobDTO {
     }
 
     // Constructors
-    public JobDTO() {
+    public JobInfo() {
     }
 
-    public JobDTO(String jobName, String jobGroup, String jobClass, String cronExpression,
-                  String description, String triggerState,
-                  LocalDateTime previousFireTime, LocalDateTime nextFireTime) {
+    public JobInfo(String jobName, String jobGroup, String jobClass, String cronExpression,
+                   String description, String triggerState,
+                   LocalDateTime previousFireTime, LocalDateTime nextFireTime) {
         this.jobName = jobName;
         this.jobGroup = jobGroup;
         this.jobClass = jobClass;

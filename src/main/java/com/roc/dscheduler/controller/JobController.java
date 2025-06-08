@@ -1,7 +1,7 @@
 package com.roc.dscheduler.controller;
 
-import com.roc.dscheduler.dto.JobDTO;
-import com.roc.dscheduler.dto.Page;
+import com.roc.dscheduler.entity.JobInfo;
+import com.roc.dscheduler.entity.Page;
 import com.roc.dscheduler.service.JobService;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class JobController {
             Model model) {
         try {
             // Get all jobs first (for filtering)
-            List<JobDTO> allJobs = jobService.getAllJobs();
+            List<JobInfo> allJobs = jobService.getAllJobs();
 
             // Apply search filter if search term is provided
             if (search != null && !search.trim().isEmpty() && searchType != null) {
@@ -56,16 +56,16 @@ public class JobController {
             }
 
             // Sort the jobs
-            Comparator<JobDTO> comparator;
+            Comparator<JobInfo> comparator;
             switch (sort) {
                 case "jobGroup":
-                    comparator = Comparator.comparing(JobDTO::getJobGroup);
+                    comparator = Comparator.comparing(JobInfo::getJobGroup);
                     break;
                 case "triggerState":
-                    comparator = Comparator.comparing(JobDTO::getTriggerState);
+                    comparator = Comparator.comparing(JobInfo::getTriggerState);
                     break;
                 default:
-                    comparator = Comparator.comparing(JobDTO::getJobName);
+                    comparator = Comparator.comparing(JobInfo::getJobName);
                     break;
             }
 
@@ -82,10 +82,10 @@ public class JobController {
 
             int fromIndex = (page - 1) * size;
             int toIndex = Math.min(fromIndex + size, totalItems);
-            List<JobDTO> pageJobs = allJobs.subList(fromIndex, toIndex);
+            List<JobInfo> pageJobs = allJobs.subList(fromIndex, toIndex);
 
             // Create page object
-            Page<JobDTO> jobPage = new Page<>();
+            Page<JobInfo> jobPage = new Page<>();
             jobPage.setContent(pageJobs);
             jobPage.setCurrentPage(page);
             jobPage.setPageSize(size);
@@ -112,37 +112,37 @@ public class JobController {
 
     @GetMapping("/new")
     public String showCreateJobForm(Model model) {
-        model.addAttribute("jobDTO", new JobDTO());
+        model.addAttribute("jobInfo", new JobInfo());
         return "jobs/form"; // Thymeleaf template: src/main/resources/templates/jobs/form.html
     }
 
     @PostMapping("/save")
-    public String saveJob(@Valid @ModelAttribute("jobDTO") JobDTO jobDTO,
+    public String saveJob(@Valid @ModelAttribute("jobInfo") JobInfo jobInfo,
                           BindingResult bindingResult,
                           RedirectAttributes redirectAttributes,
                           Model model) {
         if (bindingResult.hasErrors()) {
-            // If using @Valid, ensure your JobDTO has validation annotations (e.g., @NotEmpty, @Pattern for cron)
+            // If using @Valid, ensure your jobInfo has validation annotations (e.g., @NotEmpty, @Pattern for cron)
             // For simplicity, basic error handling is shown here.
-            model.addAttribute("jobDTO", jobDTO); // Keep user input
+            model.addAttribute("jobInfo", jobInfo); // Keep user input
             return "jobs/form";
         }
         try {
-            jobService.scheduleJob(jobDTO);
-            redirectAttributes.addFlashAttribute("successMessage", "Job '" + jobDTO.getJobName() + "' scheduled successfully!");
+            jobService.scheduleJob(jobInfo);
+            redirectAttributes.addFlashAttribute("successMessage", "Job '" + jobInfo.getJobName() + "' scheduled successfully!");
         } catch (ClassNotFoundException e) {
-            log.error("Error scheduling job {}: Job class not found - {}", jobDTO.getJobName(), jobDTO.getJobClass(), e);
-            model.addAttribute("jobDTO", jobDTO);
-            model.addAttribute("errorMessage", "Job class '" + jobDTO.getJobClass() + "' not found.");
+            log.error("Error scheduling job {}: Job class not found - {}", jobInfo.getJobName(), jobInfo.getJobClass(), e);
+            model.addAttribute("jobInfo", jobInfo);
+            model.addAttribute("errorMessage", "Job class '" + jobInfo.getJobClass() + "' not found.");
             return "jobs/form";
         } catch (SchedulerException e) {
-            log.error("Error scheduling job {}: {}", jobDTO.getJobName(), e.getMessage(), e);
-            model.addAttribute("jobDTO", jobDTO);
+            log.error("Error scheduling job {}: {}", jobInfo.getJobName(), e.getMessage(), e);
+            model.addAttribute("jobInfo", jobInfo);
             model.addAttribute("errorMessage", "Could not schedule job: " + e.getMessage());
             return "jobs/form";
         } catch (Exception e) {
-            log.error("Unexpected error scheduling job {}: {}", jobDTO.getJobName(), e.getMessage(), e);
-            model.addAttribute("jobDTO", jobDTO);
+            log.error("Unexpected error scheduling job {}: {}", jobInfo.getJobName(), e.getMessage(), e);
+            model.addAttribute("jobInfo", jobInfo);
             model.addAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
             return "jobs/form";
         }

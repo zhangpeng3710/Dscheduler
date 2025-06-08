@@ -16,7 +16,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        <form th:action="@{/jobs/save}" th:object="${jobDTO}" method="post">
+        <form th:action="@{/jobs/save}" th:object="${jobInfo}" method="post">
             <div class="mb-3">
                 <label for="jobName" class="form-label">Job Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="jobName" th:field="*{jobName}" required="required" />

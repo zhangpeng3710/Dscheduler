@@ -1,6 +1,6 @@
 package com.roc.dscheduler.service;
 
-import com.roc.dscheduler.dto.JobDTO;
+import com.roc.dscheduler.entity.JobInfo;
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
@@ -27,39 +27,39 @@ public class JobService {
     /**
      * Schedules a new job.
      *
-     * @param jobDTO DTO containing job details.
+     * @param jobInfo DTO containing job details.
      * @throws SchedulerException if scheduling fails.
      * @throws ClassNotFoundException if the job class is not found.
      */
-    public void scheduleJob(JobDTO jobDTO) throws SchedulerException, ClassNotFoundException {
+    public void scheduleJob(JobInfo jobInfo) throws SchedulerException, ClassNotFoundException {
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
-        JobKey jobKey = JobKey.jobKey(jobDTO.getJobName(), jobDTO.getJobGroup());
+        JobKey jobKey = JobKey.jobKey(jobInfo.getJobName(), jobInfo.getJobGroup());
 
         if (scheduler.checkExists(jobKey)) {
-            log.warn("Job {} in group {} already exists. It will be updated.", jobDTO.getJobName(), jobDTO.getJobGroup());
+            log.warn("Job {} in group {} already exists. It will be updated.", jobInfo.getJobName(), jobInfo.getJobGroup());
             // Optionally delete and recreate, or update. For simplicity, we'll allow Quartz to update if overwriteExistingJobs is true.
             // scheduler.deleteJob(jobKey);
         }
 
         @SuppressWarnings("unchecked")
-        Class<? extends Job> jobClass = (Class<? extends Job>) Class.forName(jobDTO.getJobClass());
+        Class<? extends Job> jobClass = (Class<? extends Job>) Class.forName(jobInfo.getJobClass());
 
         JobDetail jobDetail = JobBuilder.newJob(jobClass)
                 .withIdentity(jobKey)
-                .withDescription(jobDTO.getDescription())
+                .withDescription(jobInfo.getDescription())
                 .storeDurably() // Important if the job is to exist without triggers
                 .build();
 
         Trigger trigger = TriggerBuilder.newTrigger()
                 .forJob(jobDetail)
-                .withIdentity(jobDTO.getJobName() + "_trigger", jobDTO.getJobGroup())
-                .withDescription(jobDTO.getDescription())
-                .withSchedule(CronScheduleBuilder.cronSchedule(jobDTO.getCronExpression())
+                .withIdentity(jobInfo.getJobName() + "_trigger", jobInfo.getJobGroup())
+                .withDescription(jobInfo.getDescription())
+                .withSchedule(CronScheduleBuilder.cronSchedule(jobInfo.getCronExpression())
                         .withMisfireHandlingInstructionFireAndProceed()) // Example misfire instruction
                 .build();
 
         scheduler.scheduleJob(jobDetail, trigger);
-        log.info("Scheduled job: {} in group: {} with cron: {}", jobDTO.getJobName(), jobDTO.getJobGroup(), jobDTO.getCronExpression());
+        log.info("Scheduled job: {} in group: {} with cron: {}", jobInfo.getJobName(), jobInfo.getJobGroup(), jobInfo.getCronExpression());
     }
 
     /**
@@ -104,38 +104,38 @@ public class JobService {
     /**
      * Retrieves all scheduled jobs.
      *
-     * @return List of JobDTOs.
+     * @return List of jobInfos.
      * @throws SchedulerException if retrieval fails.
      */
-    public List<JobDTO> getAllJobs() throws SchedulerException {
+    public List<JobInfo> getAllJobs() throws SchedulerException {
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
-        List<JobDTO> jobDTOs = new ArrayList<>();
+        List<JobInfo> jobInfos = new ArrayList<>();
         Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.anyJobGroup());
 
         for (JobKey jobKey : jobKeys) {
             JobDetail jobDetail = scheduler.getJobDetail(jobKey);
             List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
 
-            JobDTO jobDTO = new JobDTO();
-            jobDTO.setJobName(jobKey.getName());
-            jobDTO.setJobGroup(jobKey.getGroup());
-            jobDTO.setJobClass(jobDetail.getJobClass().getName());
-            jobDTO.setDescription(jobDetail.getDescription());
+            JobInfo jobInfo = new JobInfo();
+            jobInfo.setJobName(jobKey.getName());
+            jobInfo.setJobGroup(jobKey.getGroup());
+            jobInfo.setJobClass(jobDetail.getJobClass().getName());
+            jobInfo.setDescription(jobDetail.getDescription());
 
             if (!triggers.isEmpty()) {
                 Trigger trigger = triggers.get(0); // Assuming one trigger per job for simplicity
-                jobDTO.setTriggerState(scheduler.getTriggerState(trigger.getKey()).name());
-                jobDTO.setPreviousFireTime(toLocalDateTime(trigger.getPreviousFireTime()));
-                jobDTO.setNextFireTime(toLocalDateTime(trigger.getNextFireTime()));
+                jobInfo.setTriggerState(scheduler.getTriggerState(trigger.getKey()).name());
+                jobInfo.setPreviousFireTime(toLocalDateTime(trigger.getPreviousFireTime()));
+                jobInfo.setNextFireTime(toLocalDateTime(trigger.getNextFireTime()));
                 if (trigger instanceof CronTrigger) {
-                    jobDTO.setCronExpression(((CronTrigger) trigger).getCronExpression());
+                    jobInfo.setCronExpression(((CronTrigger) trigger).getCronExpression());
                 }
             } else {
-                jobDTO.setTriggerState("NO_TRIGGER"); // Job exists but has no trigger
+                jobInfo.setTriggerState("NO_TRIGGER"); // Job exists but has no trigger
             }
-            jobDTOs.add(jobDTO);
+            jobInfos.add(jobInfo);
         }
-        return jobDTOs;
+        return jobInfos;
     }
 
     private LocalDateTime toLocalDateTime(Date date) {

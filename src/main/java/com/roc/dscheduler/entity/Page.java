@@ -1,4 +1,4 @@
-package com.roc.dscheduler.dto;
+package com.roc.dscheduler.entity;
 
 import java.util.List;
 
