@@ -10,10 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class JobService {
@@ -100,39 +98,105 @@ public class JobService {
     }
 
     /**
-     * Retrieves all scheduled jobs.
+     * Retrieves paginated list of jobs with their details and triggers.
      *
-     * @return List of jobInfos.
-     * @throws SchedulerException if retrieval fails.
+     * @param page The page number (1-based)
+     * @param size The number of items per page
+     * @param sort The field to sort by (jobName, jobGroup, triggerState)
+     * @param order The sort order (asc/desc)
+     * @return List of JobInfo objects for the requested page
+     * @throws SchedulerException if retrieval fails
      */
-    public List<JobInfo> getAllJobs() throws SchedulerException {
-        List<JobInfo> jobInfos = new ArrayList<>();
-        Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.anyJobGroup());
+    public List<JobInfo> getAllJobs(int page, int size, String sort, String order) throws SchedulerException {
+        // Get all job keys first (this is lightweight)
+        List<JobKey> jobKeys = new ArrayList<>(scheduler.getJobKeys(GroupMatcher.anyJobGroup()));
+        int totalJobs = jobKeys.size();
 
-        for (JobKey jobKey : jobKeys) {
-            JobDetail jobDetail = scheduler.getJobDetail(jobKey);
-            List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
+        // Calculate pagination bounds
+        int totalPages = (int) Math.ceil((double) totalJobs / size);
+        page = Math.max(1, Math.min(page, totalPages));
+        int fromIndex = (page - 1) * size;
+        int toIndex = Math.min(fromIndex + size, totalJobs);
 
-            JobInfo jobInfo = new JobInfo();
-            jobInfo.setJobName(jobKey.getName());
-            jobInfo.setJobGroup(jobKey.getGroup());
-            jobInfo.setJobClass(jobDetail.getJobClass().getName());
-            jobInfo.setDescription(jobDetail.getDescription());
-
-            if (!triggers.isEmpty()) {
-                Trigger trigger = triggers.get(0); // Assuming one trigger per job for simplicity
-                jobInfo.setTriggerState(scheduler.getTriggerState(trigger.getKey()).name());
-                jobInfo.setPreviousFireTime(toLocalDateTime(trigger.getPreviousFireTime()));
-                jobInfo.setNextFireTime(toLocalDateTime(trigger.getNextFireTime()));
-                if (trigger instanceof CronTrigger) {
-                    jobInfo.setCronExpression(((CronTrigger) trigger).getCronExpression());
-                }
-            } else {
-                jobInfo.setTriggerState("NO_TRIGGER"); // Job exists but has no trigger
-            }
-            jobInfos.add(jobInfo);
+        // Sort job keys based on the requested field and order
+        Comparator<JobKey> keyComparator;
+        switch (sort) {
+            case "jobGroup":
+                keyComparator = Comparator.comparing(JobKey::getGroup, String.CASE_INSENSITIVE_ORDER);
+                break;
+            case "triggerState":
+                // For trigger state, we'll need to sort after loading job details
+                keyComparator = Comparator.comparing(JobKey::getName);
+                break;
+            default: // jobName
+                keyComparator = Comparator.comparing(JobKey::getName, String.CASE_INSENSITIVE_ORDER);
+                break;
         }
+
+        if ("desc".equalsIgnoreCase(order)) {
+            keyComparator = keyComparator.reversed();
+        }
+
+        // Sort the keys
+        jobKeys.sort(keyComparator);
+
+        // Get the sublist for the current page
+        List<JobKey> pagedJobKeys = jobKeys.subList(fromIndex, toIndex);
+
+        // Now fetch details only for the jobs on the current page
+        List<JobInfo> jobInfos = pagedJobKeys.stream().map(jobKey -> {
+            try {
+                JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+                List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
+
+                JobInfo jobInfo = new JobInfo();
+                jobInfo.setJobName(jobKey.getName());
+                jobInfo.setJobGroup(jobKey.getGroup());
+                jobInfo.setJobClass(jobDetail.getJobClass().getName());
+                jobInfo.setDescription(jobDetail.getDescription());
+
+                if (!triggers.isEmpty()) {
+                    Trigger trigger = triggers.get(0);
+                    jobInfo.setTriggerState(scheduler.getTriggerState(trigger.getKey()).name());
+                    jobInfo.setPreviousFireTime(toLocalDateTime(trigger.getPreviousFireTime()));
+                    jobInfo.setNextFireTime(toLocalDateTime(trigger.getNextFireTime()));
+                    if (trigger instanceof CronTrigger) {
+                        jobInfo.setCronExpression(((CronTrigger) trigger).getCronExpression());
+                    }
+                } else {
+                    jobInfo.setTriggerState("NO_TRIGGER");
+                }
+                return jobInfo;
+            } catch (SchedulerException e) {
+                log.error("Error fetching job details for {}:{}", jobKey.getGroup(), jobKey.getName(), e);
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        // If sorting by triggerState, we need to sort after loading the state
+        if ("triggerState".equals(sort)) {
+            Comparator<JobInfo> stateComparator = Comparator.comparing(
+                    JobInfo::getTriggerState,
+                    String.CASE_INSENSITIVE_ORDER);
+
+            if ("desc".equalsIgnoreCase(order)) {
+                stateComparator = stateComparator.reversed();
+            }
+
+            jobInfos.sort(stateComparator);
+        }
+
         return jobInfos;
+    }
+
+    /**
+     * Gets the total count of all jobs.
+     *
+     * @return total number of jobs
+     * @throws SchedulerException if retrieval fails
+     */
+    public int getTotalJobCount() throws SchedulerException {
+        return scheduler.getJobKeys(GroupMatcher.anyJobGroup()).size();
     }
 
     private LocalDateTime toLocalDateTime(Date date) {

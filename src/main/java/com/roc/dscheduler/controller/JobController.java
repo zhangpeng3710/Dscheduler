@@ -14,9 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/jobs")
@@ -31,7 +29,6 @@ public class JobController {
         this.jobService = jobService;
     }
 
-
     @GetMapping
     public String listJobs(
             @RequestParam(defaultValue = "1") int page,
@@ -42,75 +39,54 @@ public class JobController {
             @RequestParam(required = false) String searchType,
             Model model) {
         try {
-            // Get all jobs first (for filtering)
-            List<JobInfo> allJobs = jobService.getAllJobs();
+            // Get paginated jobs with sorting
+            List<JobInfo> jobs = jobService.getAllJobs(page, size, sort, order);
+
+            // Get total count for pagination
+            int totalItems = jobService.getTotalJobCount();
+            int totalPages = (int) Math.ceil((double) totalItems / size);
+
+            // Create page object
+            Page<JobInfo> jobPage = new Page<>();
+            jobPage.setContent(jobs);
+            jobPage.setCurrentPage(page);
+            jobPage.setPageSize(size);
+            jobPage.setTotalItems(totalItems);
+            jobPage.setTotalPages(totalPages == 0 ? 1 : totalPages);
 
             // Apply search filter if search term is provided
             if (search != null && !search.trim().isEmpty() && searchType != null) {
                 String searchTerm = search.toLowerCase().trim();
-                allJobs = allJobs.stream().filter(job -> {
+                jobs = jobs.stream().filter(job -> {
                     switch (searchType) {
                         case "name":
                             return job.getJobName().toLowerCase().contains(searchTerm);
                         case "group":
                             return job.getJobGroup().toLowerCase().contains(searchTerm);
                         case "cron":
-                            return job.getCronExpression().toLowerCase().contains(searchTerm);
+                            return job.getCronExpression() != null &&
+                                    job.getCronExpression().toLowerCase().contains(searchTerm);
                         case "status":
-                            return job.getTriggerState().toLowerCase().contains(searchTerm);
+                            return job.getTriggerState() != null &&
+                                    job.getTriggerState().toLowerCase().contains(searchTerm);
                         default:
                             return true;
                     }
-                }).collect(Collectors.toList());
+                }).collect(java.util.stream.Collectors.toList());
+
+                // Update pagination info after filtering
+                int filteredCount = jobs.size();
+                jobPage.setContent(jobs);
+                jobPage.setTotalItems(filteredCount);
+                jobPage.setTotalPages((int) Math.ceil((double) filteredCount / size));
             }
-
-            // Sort the jobs
-            Comparator<JobInfo> comparator;
-            switch (sort) {
-                case "jobGroup":
-                    comparator = Comparator.comparing(JobInfo::getJobGroup);
-                    break;
-                case "triggerState":
-                    comparator = Comparator.comparing(JobInfo::getTriggerState);
-                    break;
-                default:
-                    comparator = Comparator.comparing(JobInfo::getJobName);
-                    break;
-            }
-
-            if ("desc".equalsIgnoreCase(order)) {
-                comparator = comparator.reversed();
-            }
-
-            allJobs.sort(comparator);
-
-            // Apply pagination
-            int totalItems = allJobs.size();
-            int totalPages = (int) Math.ceil((double) totalItems / size);
-            page = Math.max(1, Math.min(page, totalPages));
-
-            int fromIndex = (page - 1) * size;
-            int toIndex = Math.min(fromIndex + size, totalItems);
-            List<JobInfo> pageJobs = allJobs.subList(fromIndex, toIndex);
-
-            // Create page object
-            Page<JobInfo> jobPage = new Page<>();
-            jobPage.setContent(pageJobs);
-            jobPage.setCurrentPage(page);
-            jobPage.setPageSize(size);
-            jobPage.setTotalItems(totalItems);
-            jobPage.setTotalPages(totalPages == 0 ? 1 : totalPages);
 
             model.addAttribute("page", jobPage);
             model.addAttribute("sortField", sort);
             model.addAttribute("sortOrder", order);
             model.addAttribute("search", search);
             model.addAttribute("searchType", searchType != null ? searchType : "name");
-            List<Integer> attributeValue = new java.util.ArrayList<>();
-            attributeValue.add(10);
-            attributeValue.add(20);
-            attributeValue.add(50);
-            model.addAttribute("pageSizes", attributeValue);
+            model.addAttribute("pageSizes", java.util.Arrays.asList(10, 20, 50));
 
         } catch (SchedulerException e) {
             log.error("Error fetching job list: {}", e.getMessage(), e);
