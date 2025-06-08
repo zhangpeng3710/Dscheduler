@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
+import java.util.Comparator;
+import java.util.List;
 
 @Controller
 @RequestMapping("/jobs")
@@ -24,15 +26,43 @@ public class JobController {
     private JobService jobService;
 
     @GetMapping
-    public String listJobs(Model model) {
+    public String listJobs(
+            @RequestParam(defaultValue = "jobName") String sort,
+            @RequestParam(defaultValue = "asc") String order,
+            Model model) {
         try {
-            model.addAttribute("jobs", jobService.getAllJobs());
+            // Get all jobs
+            List<JobDTO> jobs = jobService.getAllJobs();
+
+            // Sort the jobs based on sort and order parameters
+            Comparator<JobDTO> comparator;
+            switch (sort) {
+                case "jobGroup":
+                    comparator = Comparator.comparing(JobDTO::getJobGroup);
+                    break;
+                case "triggerState":
+                    comparator = Comparator.comparing(JobDTO::getTriggerState);
+                    break;
+                default:
+                    comparator = Comparator.comparing(JobDTO::getJobName);
+                    sort = "jobName"; // Ensure sort is set to a valid value
+            }
+
+            if ("desc".equalsIgnoreCase(order)) {
+                comparator = comparator.reversed();
+            }
+
+            jobs.sort(comparator);
+
+            model.addAttribute("jobs", jobs);
+            model.addAttribute("sortField", sort);
+            model.addAttribute("sortOrder", order);
+            
         } catch (SchedulerException e) {
             log.error("Error fetching job list: {}", e.getMessage(), e);
             model.addAttribute("error", "Could not retrieve job list: " + e.getMessage());
-            // Optionally, return an error view or add an error message to the current view
         }
-        return "jobs/list"; // Thymeleaf template: src/main/resources/templates/jobs/list.html
+        return "jobs/list";
     }
 
     @GetMapping("/new")

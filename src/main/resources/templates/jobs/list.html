@@ -26,7 +26,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-
         <div class="mb-3">
             <a th:href="@{/jobs/new}" class="btn btn-primary"><i class="fas fa-plus-circle"></i> 添加定时任务</a>
         </div>
@@ -35,15 +34,30 @@
             No jobs scheduled yet.
         </div>
 
-        <table th:if="${jobs != null and not jobs.isEmpty()}" class="table table-striped table-hover">
+        <table th:if="${jobs != null and not jobs.isEmpty()}" class="table table-striped table-hover" id="jobsTable">
             <thead class="table-dark">
             <tr>
-                <th>名称</th>
-                <th>分组</th>
+                <th class="sortable" data-sort="jobName" th:classappend="${sortField == 'jobName' ? 'sorted ' + (sortOrder == 'asc' ? 'sort-asc' : 'sort-desc') : ''}">
+                    名称
+                    <i class="fas fa-sort ms-1"></i>
+                    <i class="fas fa-sort-up ms-1" th:if="${sortField == 'jobName' and sortOrder == 'asc'}"></i>
+                    <i class="fas fa-sort-down ms-1" th:if="${sortField == 'jobName' and sortOrder == 'desc'}"></i>
+                </th>
+                <th class="sortable" data-sort="jobGroup" th:classappend="${sortField == 'jobGroup' ? 'sorted ' + (sortOrder == 'asc' ? 'sort-asc' : 'sort-desc') : ''}">
+                    分组
+                    <i class="fas fa-sort ms-1"></i>
+                    <i class="fas fa-sort-up ms-1" th:if="${sortField == 'jobGroup' and sortOrder == 'asc'}"></i>
+                    <i class="fas fa-sort-down ms-1" th:if="${sortField == 'jobGroup' and sortOrder == 'desc'}"></i>
+                </th>
                 <th>任务类</th>
                 <th>Cron表达式</th>
                 <th>描述</th>
-                <th>状态</th>
+                <th class="sortable" data-sort="triggerState" th:classappend="${sortField == 'triggerState' ? 'sorted ' + (sortOrder == 'asc' ? 'sort-asc' : 'sort-desc') : ''}">
+                    状态
+                    <i class="fas fa-sort ms-1"></i>
+                    <i class="fas fa-sort-up ms-1" th:if="${sortField == 'triggerState' and sortOrder == 'asc'}"></i>
+                    <i class="fas fa-sort-down ms-1" th:if="${sortField == 'triggerState' and sortOrder == 'desc'}"></i>
+                </th>
                 <th>下次运行时间</th>
                 <th>上次运行时间</th>
                 <th>操作</th>
@@ -95,7 +109,63 @@
 </div>
 
 <th:block layout:fragment="scripts">
-    <!-- Add any page-specific JavaScript here if needed -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to sortable columns
+            document.querySelectorAll('th.sortable').forEach(header => {
+                header.addEventListener('click', function() {
+                    const sortField = this.dataset.sort;
+                    let sortOrder = 'asc';
+
+                    // Toggle sort order if clicking the same column
+                    if (this.classList.contains('sorted')) {
+                        sortOrder = this.classList.contains('sort-asc') ? 'desc' : 'asc';
+                    }
+
+                    // Get current URL and update with sort parameters
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('sort', sortField);
+                    url.searchParams.set('order', sortOrder);
+
+                    // Reload the page with new sort parameters
+                    window.location.href = url.toString();
+                });
+
+                // Add cursor pointer to indicate sortable columns
+                header.style.cursor = 'pointer';
+            });
+        });
+    </script>
+
+    <style>
+        th.sortable {
+            position: relative;
+            padding-right: 25px !important;
+        }
+        th.sortable i {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+        }
+        th.sortable:hover i {
+            opacity: 1;
+        }
+        th.sorted i {
+            opacity: 1;
+        }
+        th.sort-asc .fa-sort-up,
+        th.sort-desc .fa-sort-down {
+            display: inline-block !important;
+        }
+        th.sort-asc .fa-sort,
+        th.sort-desc .fa-sort,
+        .fa-sort-up,
+        .fa-sort-down {
+            display: none !important;
+        }
+    </style>
 </th:block>
 </body>
 </html>
