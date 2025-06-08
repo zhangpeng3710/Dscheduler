@@ -39,7 +39,7 @@
 <body>
 <div class="card login-card">
     <div class="card-body">
-        <h3 class="card-title text-center">Quartz Scheduler Login</h3>
+        <h3 class="card-title text-center">Dscheduler</h3>
         <form th:action="@{/login}" method="post">
             <div th:if="${param.error}" class="alert alert-danger" role="alert">
                 Invalid username or password.
@@ -59,7 +59,7 @@
             </div>
 
             <button class="w-100 btn btn-lg btn-primary" type="submit">
-                <i class="fas fa-sign-in-alt me-2"></i>Sign in
+                <i class="fas fa-sign-in-alt me-2"></i>登录
             </button>
         </form>
     </div>
